@@ -18,6 +18,7 @@
   "homepage": "https://github.com/999946/vue2wxml-loader#readme",
   "devDependencies": {},
   "dependencies": {
+    "babel-generator": "^6.26.1",
     "pretty": "^2.0.0"
   }
 }
