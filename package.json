@@ -18,6 +18,6 @@
   "homepage": "https://github.com/999946/vue2wxml-loader#readme",
   "devDependencies": {},
   "dependencies": {
-      "pretty": "^2.0.0"
+    "pretty": "^2.0.0"
   }
 }
