@@ -1,0 +1,23 @@
+{
+  "name": "vue2wxml-loader",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/999946/vue2wxml-loader.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/999946/vue2wxml-loader/issues"
+  },
+  "homepage": "https://github.com/999946/vue2wxml-loader#readme",
+  "devDependencies": {},
+  "dependencies": {
+      "pretty": "^2.0.0"
+  }
+}
