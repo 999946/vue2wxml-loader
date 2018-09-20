@@ -4056,12 +4056,15 @@ var tagMap = {
   'param': 'view',
 
   // https://mp.weixin.qq.com/debug/wxadoc/dev/component/
-  // [...document.querySelectorAll('.markdown-section tbody td:first-child')].map(v => v.textContent).join(',\n')
+  // [...document.querySelectorAll('.chapter')].map(v => v.getAttribute('data-name')).join(',\n')
   'view': 'view',
   'scroll-view': 'scroll-view',
   'swiper': 'swiper',
+  'movable-view': 'movable-view',
+  'cover-view': 'cover-view',
   'icon': 'icon',
   'text': 'text',
+  'rich-text': 'rich-text',
   // 'progress': 'progress',
   // 'button': 'button',
   // 'form': 'form',
@@ -4075,10 +4078,16 @@ var tagMap = {
   // 'label': 'label',
   'navigator': 'navigator',
   // 'audio': 'audio',
+  'camera': 'camera',
+  'live-player': 'live-player',
+  'live-pusher': 'live-pusher',
   'image': 'image',
   // 'video': 'video',
   'map': 'map',
   // 'canvas': 'canvas',
+  'open-data': 'open-data',
+  'web-view': 'web-view',
+  'ad': 'ad',
   'contact-button': 'contact-button',
   'block': 'block'
 };
@@ -4191,6 +4200,12 @@ var wxmlDirectiveMap = {
 
 var tagConfig = {
   virtualTag: ['slot', 'template', 'block']
+};
+
+var component = {
+  isComponent: function isComponent (tagName) {
+    return !tagMap[tagName]
+  }
 };
 
 // babel-plugin-transform-object-to-ternary-operator.js
@@ -4334,12 +4349,7 @@ var attrs = {
           if (key !== 'data-mpcomid') {
             log(("template 不支持此属性-> " + key + "=\"" + val + "\""), 'waring');
           }
-        }
-        // else if (key === 'src') {
-        //   attrs[key] = 'JSON.stringify(require(JSON.stringify(val)))'
-        //   console.log('key : --------------------- > ', key)
-        // }
-        else {
+        } else {
           attrs[key] = val;
         }
       }
@@ -4369,9 +4379,13 @@ var attrs = {
     if (eventName === 'change' && (tag === 'input' || tag === 'textarea')) {
       wxmlEventName = 'blur';
     } else {
-      wxmlEventName = eventMap.map[eventName];
+      var isComponent = component.isComponent(tag);
+      if (!isComponent) {
+        wxmlEventName = eventMap.map[eventName];
+      } else {
+        wxmlEventName = eventName;
+      }
     }
-
     var eventType = 'bind';
     var isStop = eventNameMap.includes('stop');
     if (eventNameMap.includes('capture')) {
@@ -4379,11 +4393,10 @@ var attrs = {
     } else if (isStop) {
       eventType = 'catch';
     }
-
-    wxmlEventName = eventType + (wxmlEventName || eventName);
+    var event = wxmlEventName || eventName;
+    wxmlEventName = eventType + event;
     // const method = eventType.replace(':', '').split('-').map(v => capitalize(v)).join('')
     attrs[wxmlEventName] = "handleProxy";
-    var event = (eventMap.map[eventName] || eventName);
     attrs['data-' + event] = val.replace(/\(.*\)/, '');
 
     var m = val.match(/\((.+?)\)$/);
@@ -4465,39 +4478,6 @@ var attrs = {
   }
 };
 
-function getSlotsName (obj) {
-  if (!obj) {
-    return ''
-  }
-  return Object.keys(obj).map(function (k) {
-    return ("$slot" + k + ":'" + (obj[k]) + "'")
-  }).join(',')
-}
-
-var component = {
-  isComponent: function isComponent (tagName, components) {
-    if ( components === void 0 ) components = {};
-
-    return !!components[tagName]
-  },
-  convertComponent: function convertComponent (ast, components, slotName) {
-    var attrsMap = ast.attrsMap;
-    var tag = ast.tag;
-    var mpcomid = ast.mpcomid;
-    var slots = ast.slots;
-    if (slotName) {
-      attrsMap['data'] = "{{...$root[$k], $root}}";
-      attrsMap['is'] = "{{" + slotName + "}}";
-    } else {
-      var slotsName = getSlotsName(slots);
-      var restSlotsName = slotsName ? (", " + slotsName) : '';
-      attrsMap['data'] = "{{...$root[$kk+" + mpcomid + "], $root" + restSlotsName + "}}";
-      attrsMap['is'] = components[tag].name;
-    }
-    return ast
-  }
-};
-
 var tag = function (ast, options) {
   var tag = ast.tag;
   var elseif = ast.elseif;
@@ -4505,7 +4485,6 @@ var tag = function (ast, options) {
   var forText = ast.for;
   var staticClass = ast.staticClass; if ( staticClass === void 0 ) staticClass = '';
   var attrsMap = ast.attrsMap; if ( attrsMap === void 0 ) attrsMap = {};
-  var components = options.components;
   var ifText = attrsMap['v-if'];
   var href = attrsMap.href;
   var bindHref = attrsMap['v-bind:href'];
@@ -4514,8 +4493,7 @@ var tag = function (ast, options) {
   if (!tag) {
     return ast
   }
-  var isComponent = component.isComponent(tag, components);
-  if (tag !== 'template' && tag !== 'block' && tag !== 'slot' && !isComponent) {
+  if (tag !== 'template' && tag !== 'block' && tag !== 'slot') {
     ast.staticClass = staticClass ? ("_" + tag + " " + staticClass) : ("_" + tag);
   }
   ast.tag = tagMap[tag] || tag;
