@@ -1351,7 +1351,7 @@ var warn;
 var RANGE_TOKEN = '__r';
 var CHECKBOX_RADIO_TOKEN = '__c';
 
-function model$1 (
+function model (
   el,
   dir,
   _warn
@@ -1523,7 +1523,7 @@ function html (el, dir) {
 }
 
 var directives = {
-  model: model$1,
+  model: model,
   text: text,
   html: html
 };
@@ -3933,6 +3933,112 @@ function createCompilerCreator (baseCompile) {
   }
 }
 
+/*  */
+
+// `createCompilerCreator` allows creating compilers that use alternative
+// parser/optimizer/codegen, e.g the SSR optimizing compiler.
+// Here we just export a default compiler using the default parts.
+var createCompiler = createCompilerCreator(function baseCompile (
+  template$$1,
+  options
+) {
+  var originAst = parse(template$$1.trim(), options);
+  var ast = originAst; // markComponent(originAst, options)
+  optimize(ast, options);
+  var code = generate$1(ast, options);
+  return {
+    ast: ast,
+    render: code.render,
+    staticRenderFns: code.staticRenderFns
+  }
+});
+
+// type：
+// 0, 默认值, 拼接 ${name}={{ ${content} }}
+// 1, 拼接 ${name}
+// 2, 拼接 ${map[key]}={{ '${content}' }}
+// 3, 拼接 {{ ${content} }}
+// 4, 拼接为空字符串
+// 5, 不需要在wxml上表现出来，可直接清除
+
+var noSupport = {
+  type: 4,
+  check: function (k, v, errors) {
+    errors(("不支持此指令: " + k + "=\"" + v + "\""));
+    return false
+  }
+};
+var wxmlDirectiveMap = {
+  'v-if': {
+    name: 'wx:if',
+    type: 0
+  },
+  'v-else-if': {
+    name: 'wx:elif',
+    type: 0
+  },
+  'v-else': {
+    name: 'wx:else',
+    type: 1
+  },
+  'v-text': {
+    name: '',
+    type: 1
+  },
+  'v-html': {
+    name: '',
+    type: 1
+  },
+  'v-on': {
+    name: '',
+    map: {
+      click: 'tap',
+      touchstart: 'touchstart',
+      touchmove: 'touchmove',
+      touchcancel: 'touchcancel',
+      touchend: 'touchend',
+      tap: 'tap',
+      longtap: 'longtap',
+      input: 'input',
+      change: 'change',
+      submit: 'submit',
+      blur: 'blur',
+      focus: 'focus',
+      reset: 'reset',
+      confirm: 'confirm',
+      columnchange: 'columnchange',
+      linechange: 'linechange',
+      error: 'error',
+      scrolltoupper: 'scrolltoupper',
+      scrolltolower: 'scrolltolower',
+      scroll: 'scroll',
+      load: 'load'
+    },
+    type: 2
+  },
+  'v-bind': {
+    name: '',
+    map: {
+      'href': 'url'
+    },
+    type: 3
+  },
+  'href': {
+    name: 'url',
+    type: 2
+  },
+  'v-pre': noSupport,
+  'v-cloak': noSupport,
+  'v-once': {
+    name: '',
+    type: 5
+  }
+};
+
+var tagConfig = {
+  virtualTag: ['slot', 'template', 'block']
+};
+
 var tagMap = {
   'br': 'view',
   'hr': 'view',
@@ -4090,116 +4196,6 @@ var tagMap = {
   'ad': 'ad',
   'contact-button': 'contact-button',
   'block': 'block'
-};
-
-// 全局的事件触发器 ID
-// let eIndex = 0
-
-/*  */
-
-// for mp
-// `createCompilerCreator` allows creating compilers that use alternative
-// parser/optimizer/codegen, e.g the SSR optimizing compiler.
-// Here we just export a default compiler using the default parts.
-var createCompiler = createCompilerCreator(function baseCompile (
-  template$$1,
-  options
-) {
-  var originAst = parse(template$$1.trim(), options);
-  var ast = originAst; // markComponent(originAst, options)
-  optimize(ast, options);
-  var code = generate$1(ast, options);
-  return {
-    ast: ast,
-    render: code.render,
-    staticRenderFns: code.staticRenderFns
-  }
-});
-
-// type：
-// 0, 默认值, 拼接 ${name}={{ ${content} }}
-// 1, 拼接 ${name}
-// 2, 拼接 ${map[key]}={{ '${content}' }}
-// 3, 拼接 {{ ${content} }}
-// 4, 拼接为空字符串
-// 5, 不需要在wxml上表现出来，可直接清除
-
-var noSupport = {
-  type: 4,
-  check: function (k, v, errors) {
-    errors(("不支持此指令: " + k + "=\"" + v + "\""));
-    return false
-  }
-};
-var wxmlDirectiveMap = {
-  'v-if': {
-    name: 'wx:if',
-    type: 0
-  },
-  'v-else-if': {
-    name: 'wx:elif',
-    type: 0
-  },
-  'v-else': {
-    name: 'wx:else',
-    type: 1
-  },
-  'v-text': {
-    name: '',
-    type: 1
-  },
-  'v-html': {
-    name: '',
-    type: 1
-  },
-  'v-on': {
-    name: '',
-    map: {
-      click: 'tap',
-      touchstart: 'touchstart',
-      touchmove: 'touchmove',
-      touchcancel: 'touchcancel',
-      touchend: 'touchend',
-      tap: 'tap',
-      longtap: 'longtap',
-      input: 'input',
-      change: 'change',
-      submit: 'submit',
-      blur: 'blur',
-      focus: 'focus',
-      reset: 'reset',
-      confirm: 'confirm',
-      columnchange: 'columnchange',
-      linechange: 'linechange',
-      error: 'error',
-      scrolltoupper: 'scrolltoupper',
-      scrolltolower: 'scrolltolower',
-      scroll: 'scroll',
-      load: 'load'
-    },
-    type: 2
-  },
-  'v-bind': {
-    name: '',
-    map: {
-      'href': 'url'
-    },
-    type: 3
-  },
-  'href': {
-    name: 'url',
-    type: 2
-  },
-  'v-pre': noSupport,
-  'v-cloak': noSupport,
-  'v-once': {
-    name: '',
-    type: 5
-  }
-};
-
-var tagConfig = {
-  virtualTag: ['slot', 'template', 'block']
 };
 
 var component = {
@@ -4463,17 +4459,20 @@ var attrs = {
     if (key === 'v-model.lazy') {
       if (isFormInput) {
         attrs['bindblur'] = 'handleProxy';
+        attrs['data-model-event'] = 'blur';
       } else {
         attrs['bindchange'] = 'handleProxy';
+        attrs['data-model-event'] = 'change';
       }
     } else {
       if (isFormInput) {
         attrs['bindinput'] = 'handleProxy';
+        attrs['data-model-event'] = 'input';
       } else {
         attrs['bindchange'] = 'handleProxy';
+        attrs['data-model-event'] = 'change';
       }
     }
-
     return attrs
   }
 };
@@ -4581,7 +4580,7 @@ function convertAst (node, options, util) {
   var wxmlAst = Object.assign({}, node);
 
   // const { moduleId, components } = options
-  wxmlAst.tag = tagName = tagName ? hyphenate(tagName) : tagName;
+  wxmlAst.tag = tagName; // = tagName ? hyphenate(tagName) : tagName
   // 引入 import, isSlot 是使用 slot 的编译地方，意即 <slot></slot> 的地方
   var isSlot = tagName === 'slot';
   // if (isSlot) {
@@ -4762,7 +4761,6 @@ function compileToWxml (compiled, options) {
   var deps = ref.deps; if ( deps === void 0 ) deps = {};
   var slots = ref.slots; if ( slots === void 0 ) slots = {};
   var code = generate$2(wxast, options);
-  // console.log('code ----- > ', wxast, code)
   // 引用子模版
   // const importCode = Object.keys(deps).map(k => components[k] ? `<import src="${components[k].src}" />` : '').join('')
   var nameAttr = options.nam ? (" name=\"" + (options.name) + "\"") : '';
